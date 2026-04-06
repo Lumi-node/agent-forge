@@ -1,0 +1,24 @@
+---
+title: "AgentForge: Learn to construct intelligent agents from the ground up wit"
+abstract: "Build minimal, ground-up intelligent agent reasoning loops in Python."
+authors:
+  - name: "Andrew Young"
+    affiliation: "Automate Capture Research"
+publishedDate: 2026-04-05
+tags:
+  - Intelligent Agents
+  - Python
+  - AI
+  - Software Construction
+status: published
+featured: false
+pdfUrl: "https://research.automate-capture.com/papers/RR-agent-forge-Young2026.pdf"
+---
+
+This initial phase of AgentForge has been a deeply rewarding dive into the fundamental mechanics of intelligent agency. Our core objective was ambitious yet necessary: to move beyond using pre-packaged AI libraries and instead construct the scaffolding of an intelligent agent reasoning loop entirely from scratch in Python. We aimed to build a minimal, yet functional, framework encapsulated in `agent.py`, centered around a `ReasoningAgent` class. This agent is designed to embody the classic Sense-Plan-Act cycle. The motivation behind this project is rooted in a desire for deep, mechanistic understanding. In the broader field of AI, the architecture of agents—how they perceive, decide, and execute—is often abstracted away. By building this minimal loop, we are forcing ourselves to confront the raw components: the state representation, the decision-making function (`think()`), the interaction mechanism (`act()`), and the feedback loop (`observe()`). This foundational exercise is crucial because any complex AI system, from a sophisticated LLM agent to a robotic controller, ultimately relies on this basic, iterative loop.
+
+Technically, the system is split into two primary components. `environment.py` hosts a `SimpleGridEnvironment`, which serves as our sandbox. This environment maintains a discrete state—a grid—and responds predictably to actions. The `ReasoningAgent` in `agent.py` interacts with this environment via its three core methods. When the agent needs to decide what to do, it calls `think()`. This method takes the current state (provided by `observe()`) and, in its current minimal form, applies a rudimentary heuristic or rule set to determine the next action (e.g., "move right"). The agent then passes this action to the environment's `act()` method. The environment executes the action, transitions to a new state, and returns feedback. Finally, the agent calls `observe()`, which ingests this feedback to update its internal representation of the world, closing the loop. This tight coupling—where perception informs planning, and planning dictates action, which then generates new perception—is the essence of reactive and deliberative AI systems.
+
+What this initial build has illuminated is the sheer fragility and elegance of the loop itself. The limitations are immediately apparent: our current `think()` function is purely deterministic and reactive; it possesses no memory beyond the immediate state snapshot, and its "reasoning" is merely pattern matching against hardcoded rules. This highlights the chasm between a functional loop and a truly *intelligent* agent. The next logical steps involve enhancing the `think()` method. We need to move from simple heuristics to incorporating memory structures (like a history buffer or a simple state-space map) and potentially introducing a rudimentary planning mechanism, perhaps based on a small search algorithm like Breadth-First Search (BFS) over the environment's state graph.
+
+This project sits squarely at the intersection of classical AI (like state-space search and control theory) and modern reinforcement learning. While we are not yet implementing Q-learning, the framework we've built is the perfect substrate for it. A future iteration could replace the rule-based `think()` with a policy network trained via RL, allowing the agent to learn optimal behaviors through trial and error within the `SimpleGridEnvironment`. AgentForge, in its infancy, is not an AI; it is a meticulously engineered *machine* capable of executing the fundamental process of intelligent interaction, which is the necessary prerequisite for true intelligence.
