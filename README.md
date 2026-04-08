@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://github.com/Lumi-node/agent-forge"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"></a>
   <a href="https://img.shields.io/badge/Python-3.10%2B-blue.svg" alt="Python Version"></a>
-  <a href="https://github.com/Lumi-node/agent-forge"><img src="https://img.shields.io/badge/Tests-1%2B-green.svg" alt="Tests"></a>
+  <a href="https://github.com/Lumi-node/agent-forge"><img src="https://img.shields.io/badge/Tests-22-green.svg" alt="Tests"></a>
 </p>
 
 ---
@@ -24,51 +24,56 @@ This project serves as an excellent educational artifact for researchers and stu
 
 ## Quick Start
 
-First, ensure you have Python 3.10 or newer installed.
+Requires Python 3.10+. No external dependencies.
 
 ```bash
-pip install agent_forge
+git clone https://github.com/Lumi-node/agent-forge.git
+cd agent-forge
+python main.py
 ```
 
 ```python
-from agent_forge.agent import ReasoningAgent
-from agent_forge.environment import SimpleGridWorld
+from agent import ReasoningAgent
+from environment import SimpleGridWorld
 
-# Initialize the environment
-env = SimpleGridWorld(size=5)
+# Initialize environment: 5x5 grid with 5 collectible items
+env = SimpleGridWorld(agent_pos=(2, 2), num_items=5)
 
-# Initialize the agent
-agent = ReasoningAgent()
+# Initialize the agent at center of grid
+agent = ReasoningAgent(start_position=(2, 2))
 
-# Run a single step of the loop
-observation = env.observe()
-action = agent.think(observation)
-new_state, reward, done = env.act(action)
+# Run the think-act-observe loop
+for step in range(10):
+    state = env.get_state()       # Get grid state dict
+    agent.observe(state)          # Feed state to agent
+    action = agent.think()        # Agent decides next action
+    agent.act(action, env)        # Execute action in environment
 
-print(f"Agent took action: {action}")
+print(f"Items remaining: {env.get_state()['items_remaining']}")
+print(f"Actions taken: {agent.action_history}")
 ```
 
 ## What Can You Do?
 
-### Agent Reasoning Loop
-Implement the core cycle of an intelligent agent: perceive the state, decide on an action, and execute that action within a defined environment.
+### Think-Act-Observe Loop
+Implement the core cycle of an intelligent agent: observe the environment state, reason about the next action, and execute it.
 
 ```python
-# Example of the core loop structure
-while not done:
-    observation = env.observe()
-    action = agent.think(observation)
-    new_state, reward, done = env.act(action)
-    # Update agent state based on feedback
+state = env.get_state()   # {"grid": [[...]], "items_remaining": 5, ...}
+agent.observe(state)      # Store observation in agent
+action = agent.think()    # Returns: "up", "down", "left", "right", "collect", or "wait"
+agent.act(action, env)    # Execute; position updates on valid moves
 ```
 
 ### Simple Grid World Simulation
-Utilize the `SimpleGridWorld` to simulate a basic, discrete environment where the agent navigates, collects items, and receives feedback.
+The `SimpleGridWorld` provides a 5x5 discrete grid where the agent navigates to collect items placed at fixed positions.
 
 ```python
-# Setting up the environment
-grid = SimpleGridWorld(size=5)
-# Agent starts at (0, 0)
+env = SimpleGridWorld(agent_pos=(2, 2), num_items=3)
+state = env.get_state()
+# state["grid"]            -> 5x5 list (1 = item, 0 = empty)
+# state["items_remaining"] -> number of uncollected items
+# state["step_count"]      -> total steps taken
 ```
 
 ## Architecture
@@ -79,29 +84,30 @@ The flow is strictly sequential: **Environment $\rightarrow$ Observe $\rightarro
 
 ```mermaid
 graph TD
-    A[AgentForge Framework] --> B(ReasoningAgent);
-    A --> C(SimpleGridWorld);
-    B -- 1. Input State --> C;
-    C -- 2. Observation --> B;
-    B -- 3. Action --> C;
-    C -- 4. New State/Reward --> B;
+    E[SimpleGridWorld] -- get_state → dict --> A[ReasoningAgent];
+    A -- observe(state) --> A;
+    A -- think() → action --> A;
+    A -- act(action, env) --> E;
+    E -- step(action, pos) → bool --> E;
 ```
 
 ## API Reference
 
-### `agent_forge.agent.ReasoningAgent`
+### `ReasoningAgent` (`agent.py`)
 The core agent class responsible for decision-making.
 
-- `think(observation: dict) -> str`: Processes the current observation and returns the next action string (e.g., "UP", "DOWN").
-- `act(action: str) -> tuple`: Executes the action in the environment (Note: This method is often called by the environment wrapper in a full loop).
-- `observe() -> dict`: Retrieves the current internal state snapshot from the environment.
+- `__init__(start_position=(2, 2))`: Initialize agent at given `(row, col)` grid position.
+- `observe(observation_dict: dict)`: Store an observation dict (from `env.get_state()`) in `self.observations`.
+- `think() -> str`: Decide next action based on stored observations. Returns one of `"up"`, `"down"`, `"left"`, `"right"`, `"collect"`, or `"wait"`. Deterministic: same observations always produce the same action.
+- `act(action: str, environment: SimpleGridWorld)`: Execute action in the environment. Updates `self.position` on successful directional moves. Raises `ValueError` for invalid actions. Appends every action to `self.action_history`.
 
-### `agent_forge.environment.SimpleGridWorld`
-The environment class representing the simulation space.
+### `SimpleGridWorld` (`environment.py`)
+The environment class representing a 5x5 grid with collectible items.
 
-- `__init__(size: int)`: Initializes the grid world.
-- `observe() -> dict`: Returns a dictionary containing the agent's position and item locations.
-- `act(action: str) -> tuple`: Executes the action, returning `(new_state, reward, done)`.
+- `__init__(agent_pos: tuple[int, int] = (2, 2), num_items: int = 5)`: Initialize grid with items at fixed positions `(0,0), (0,4), (2,0), (4,0), (4,4)`.
+- `step(action: str, agent_pos: tuple[int, int]) -> bool`: Execute action at given position. Returns `True` on success, `False` on failure (out of bounds, no item to collect).
+- `get_state() -> dict`: Return `{"agent_position", "grid", "items_remaining", "step_count"}`.
+- `is_valid_position(pos: tuple[int, int]) -> bool`: Check if position is within 5x5 bounds.
 
 ## Research Background
 
